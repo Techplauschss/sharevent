@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import Link from "next/link";
+import { RecentEvents } from "@/components/RecentEvents";
 
 export default async function Home() {
   const session = await auth();
@@ -62,50 +63,55 @@ export default async function Home() {
             </div>
           )}
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-            <div className="card-hover glass-effect rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+          {/* Recent Events Section */}
+          {session ? (
+            <RecentEvents />
+          ) : (
+            /* Features Grid für nicht angemeldete Benutzer */
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+              <div className="card-hover glass-effect rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  📅 Create Events
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Easily create and customize events with all the details your guests need to know.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                📅 Create Events
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Easily create and customize events with all the details your guests need to know.
-              </p>
-            </div>
-            
-            <div className="card-hover glass-effect rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
+              
+              <div className="card-hover glass-effect rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  👥 Share & Invite
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Share your events with friends and track RSVPs in real-time with smart notifications.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                👥 Share & Invite
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Share your events with friends and track RSVPs in real-time with smart notifications.
-              </p>
-            </div>
-            
-            <div className="card-hover glass-effect rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+              
+              <div className="card-hover glass-effect rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  🎯 Manage Everything
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Keep track of all your events from a beautiful, centralized dashboard with analytics.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                🎯 Manage Everything
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Keep track of all your events from a beautiful, centralized dashboard with analytics.
-              </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
