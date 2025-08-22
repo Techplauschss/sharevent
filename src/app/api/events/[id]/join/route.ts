@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -18,7 +18,8 @@ export async function POST(
       );
     }
 
-    const eventId = params.id;
+    const resolvedParams = await params;
+    const eventId = resolvedParams.id;
 
     // Check if event exists
     const event = await prisma.event.findUnique({
