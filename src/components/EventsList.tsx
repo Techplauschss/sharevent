@@ -37,6 +37,10 @@ export function EventsList({ currentUserId }: EventsListProps) {
           errorBody = '(Could not read error body)';
         }
         console.error(`Failed to fetch events. Status: ${response.status}. Body:`, errorBody);
+        if (response.status === 401) {
+          window.location.href = '/auth/signin';
+          return;
+        }
         setEvents([]);
       }
     } catch (error) {
