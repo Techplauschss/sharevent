@@ -13,13 +13,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials: any) {
         const phone = credentials?.phone as string;
-        if (!phone) return null;
-  const normalizedPhone = phone.replace(/\D/g, ''); // Nur Ziffern
-  const phoneRegex = /^\d{6,15}$/; // 6-15 Ziffern
-  if (!phoneRegex.test(normalizedPhone)) return null;
+        if (!phone) {
+          console.error('[auth] Kein Phone-Input erhalten:', credentials);
+          throw new Error('Keine Telefonnummer angegeben.');
+        }
+        const normalizedPhone = phone.replace(/\D/g, ''); // Nur Ziffern
+        const phoneRegex = /^\d{6,15}$/; // 6-15 Ziffern
+        if (!phoneRegex.test(normalizedPhone)) {
+          console.error('[auth] Telefonnummer entspricht nicht dem erwarteten Format:', phone, '->', normalizedPhone);
+          throw new Error('Ungültiges Telefonnummernformat.');
+        }
         try {
           let user = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
           if (!user) {
+            console.error('[auth] Kein User mit dieser Nummer gefunden:', normalizedPhone);
             user = await prisma.user.create({
               data: {
                 phone: normalizedPhone,
@@ -27,16 +34,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 name: `Benutzer ${normalizedPhone.slice(-4)}`,
               }
             });
+            console.log('[auth] Neuer User angelegt:', user);
           }
-          if (!user) return null;
+          if (!user) {
+            console.error('[auth] User konnte nicht angelegt werden:', normalizedPhone);
+            throw new Error('Benutzer konnte nicht angelegt werden.');
+          }
           return {
             id: user.id,
             name: user.name,
             phone: user.phone,
             image: user.image
           };
-        } catch (err) {
-          return null;
+        } catch (err: any) {
+          console.error('[auth] Fehler bei der Authorisierung:', err?.message, err);
+          throw new Error('Interner Fehler bei der Anmeldung: ' + (err?.message || 'Unbekannt'));
         }
       }
     })
