@@ -5,9 +5,9 @@ import { EventCard } from './EventCard';
 import { Event, User, EventMember } from '@/generated/prisma';
 
 interface EventWithRelations extends Event {
-  creator: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+  creator: Pick<User, 'id' | 'name' | 'phone' | 'image'>;
   members: (EventMember & {
-    user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+    user: Pick<User, 'id' | 'name' | 'phone' | 'image'>;
   })[];
 }
 
@@ -30,7 +30,13 @@ export function EventsList({ currentUserId }: EventsListProps) {
         const data = await response.json();
         setEvents(data);
       } else {
-        console.error('Failed to fetch events');
+        let errorBody = '';
+        try {
+          errorBody = await response.text();
+        } catch (e) {
+          errorBody = '(Could not read error body)';
+        }
+        console.error(`Failed to fetch events. Status: ${response.status}. Body:`, errorBody);
         setEvents([]);
       }
     } catch (error) {

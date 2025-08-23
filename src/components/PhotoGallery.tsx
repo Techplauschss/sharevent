@@ -21,7 +21,7 @@ interface EventPhoto {
   uploader: {
     id: string;
     name: string | null;
-    email: string | null;
+    phone: string | null;
     image: string | null;
   };
 }
@@ -88,7 +88,7 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
     height: 800, // Default height
     // Additional metadata
     title: photo.caption || photo.originalName,
-    description: `Uploaded by ${photo.uploader.name || photo.uploader.email} on ${formatDate(photo.createdAt)}`
+    description: `Uploaded by ${photo.uploader.name || photo.uploader.phone} on ${formatDate(photo.createdAt)}`
   }));
 
   if (loading) {

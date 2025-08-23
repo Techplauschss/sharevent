@@ -107,7 +107,7 @@ export default async function Home() {
                   🎯 Manage Everything
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Keep track of all your events from a beautiful, centralized dashboard with analytics.
+                  Keep track of all your events from a beautiful, centralized interface with analytics.
                 </p>
               </div>
             </div>

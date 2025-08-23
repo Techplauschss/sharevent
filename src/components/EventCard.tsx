@@ -15,9 +15,9 @@ interface EventPhoto {
 }
 
 interface EventWithRelations extends Event {
-  creator: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+  creator: Pick<User, 'id' | 'name' | 'phone' | 'image'>;
   members: (EventMember & {
-    user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+    user: Pick<User, 'id' | 'name' | 'phone' | 'image'>;
   })[];
 }
 
@@ -200,7 +200,7 @@ export function EventCard({ event, currentUserId, onPhotoUploaded }: EventCardPr
                   key={member.id} 
                   className="relative w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 overflow-hidden bg-gradient-to-r from-blue-400 to-purple-600"
                   style={{ zIndex: displayMembers.length - index }}
-                  title={member.user.name || member.user.email || 'Member'}
+                  title={member.user.name || member.user.phone || 'Member'}
                 >
                   {member.user.image ? (
                     <img 
@@ -211,7 +211,7 @@ export function EventCard({ event, currentUserId, onPhotoUploaded }: EventCardPr
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="text-white text-xs font-medium">
-                        {(member.user.name || member.user.email || 'M')[0].toUpperCase()}
+                        {(member.user.name || member.user.phone || 'M')[0].toUpperCase()}
                       </span>
                     </div>
                   )}

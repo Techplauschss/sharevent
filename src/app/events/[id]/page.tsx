@@ -72,7 +72,7 @@ export default async function EventPage({ params }: EventPageProps) {
           select: {
             id: true,
             name: true,
-            email: true,
+            phone: true,
             image: true
           }
         },
@@ -82,7 +82,7 @@ export default async function EventPage({ params }: EventPageProps) {
               select: {
                 id: true,
                 name: true,
-                email: true,
+                phone: true,
                 image: true
               }
             }

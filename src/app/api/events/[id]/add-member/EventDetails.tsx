@@ -1,26 +1,6 @@
 "use client";
 // Formular-Komponente zum Hinzufügen eines Members per Telefonnummer
 function AddMemberForm({ eventId }: { eventId: string }) {
-  // Kontakte auswählen (Web Contacts API)
-  const handlePickContact = async () => {
-    if ('contacts' in navigator && 'ContactsManager' in window) {
-      try {
-        // Nur Felder, die wir brauchen
-        const props = ['tel', 'name'];
-        // Nur eine Auswahl zulassen
-        const opts = { multiple: false };
-        // @ts-ignore: Web Contacts API ist experimentell
-        const contacts = await (navigator as any).contacts.select(props, opts);
-        if (contacts && contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
-          setPhone(contacts[0].tel[0]);
-        }
-      } catch (err) {
-        setError('Kontakt konnte nicht ausgewählt werden');
-      }
-    } else {
-      setError('Dein Browser unterstützt das Kontakte-Feature nicht');
-    }
-  };
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -54,36 +34,28 @@ function AddMemberForm({ eventId }: { eventId: string }) {
 
   return (
     <form onSubmit={handleAddMember} className="flex flex-col md:flex-row items-start gap-2 mt-2">
-      <div className="flex items-center gap-2 w-full">
-        <input
-          type="text"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          placeholder="Telefonnummer hinzufügen"
-          className="border rounded-lg px-3 py-2 text-sm"
-          required
-        />
-        <button
-          type="button"
-          onClick={handlePickContact}
-          className="bg-gray-200 dark:bg-gray-700 px-2 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-800 md:hidden"
-        >
-          Kontakt auswählen
-        </button>
-        <button
-          type="submit"
-          disabled={loading || !phone}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-        >
-          {loading ? 'Hinzufügen...' : 'Nummer hinzufügen'}
-        </button>
-      </div>
+      <input
+        type="text"
+        value={phone}
+        onChange={e => setPhone(e.target.value)}
+        placeholder="Telefonnummer hinzufügen"
+        className="border rounded-lg px-3 py-2 text-sm"
+        required
+      />
+      <button
+        type="submit"
+        disabled={loading || !phone}
+        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+      >
+        {loading ? 'Hinzufügen...' : 'Nummer hinzufügen'}
+      </button>
       {error && <span className="text-red-600 text-sm ml-2">{error}</span>}
       {success && <span className="text-green-600 text-sm ml-2">{success}</span>}
     </form>
   );
 }
-
+// ...existing code...
+"use client";
 
 import { useState } from 'react';
 import { Event, User, EventMember } from '@/generated/prisma';
@@ -105,7 +77,6 @@ interface EventDetailsProps {
 }
 
 export function EventDetails({ event, currentUserId, isCreator, isMember }: EventDetailsProps) {
-  const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPhotoGallery, setShowPhotoGallery] = useState(true);
   const [photoCount, setPhotoCount] = useState(0);
@@ -339,9 +310,9 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
               </div>
             </div>
           </div>
-          {/* Inline AddMemberForm nach Klick auf Plus-Icon */}
-          {showAddMemberForm && (
-            <div className="mt-2 md:col-span-4">
+          {/* Nummer hinzufügen UI für Creator/Member */}
+          {(isCreator || isMember) && (
+            <div className="mt-4 md:col-span-4">
               <AddMemberForm eventId={event.id} />
             </div>
           )}
@@ -416,34 +387,13 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <div className="flex items-center gap-2">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Members
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {event.members.length} {event.members.length === 1 ? 'member' : 'members'}
-                </p>
-              </div>
-              {(isCreator || isMember) && (
-                <>
-                  <button
-                    type="button"
-                    className="ml-1 p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-200 dark:hover:bg-emerald-900"
-                    onClick={() => setShowAddMemberForm(v => !v)}
-                    aria-label="Nummer hinzufügen"
-                  >
-                    <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                  {showAddMemberForm && (
-                    <div className="ml-2">
-                      <AddMemberForm eventId={event.id} />
-                    </div>
-                  )}
-                </>
-              )}
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Members
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {event.members.length} {event.members.length === 1 ? 'member' : 'members'}
+              </p>
             </div>
           </div>
         </div>

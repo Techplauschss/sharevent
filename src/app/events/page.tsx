@@ -8,26 +8,14 @@ const prisma = new PrismaClient();
 export default async function Events() {
   const session = await auth();
 
-  // Get the actual user ID from database (same logic as in API routes)
+  // Get the actual user ID from database
   let actualUserId = session?.user?.id;
   
   if (session?.user?.id) {
-    // First try to find user by session ID
+    // Find user by session ID (should exist since we use phone authentication)
     let user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
-
-    if (!user && session.user.email) {
-      // If not found by ID, try to find by email
-      user = await prisma.user.findUnique({
-        where: { email: session.user.email }
-      });
-      
-      if (user) {
-        actualUserId = user.id;
-        console.log('Using user ID from email lookup for Events page:', actualUserId);
-      }
-    }
 
     if (user) {
       actualUserId = user.id;

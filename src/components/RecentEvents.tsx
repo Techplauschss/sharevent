@@ -37,13 +37,10 @@ export function RecentEvents() {
         const response = await fetch('/api/events');
         if (response.ok) {
           const data = await response.json();
-          const sortedEvents = data.events.sort((a: Event, b: Event) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setEvents(sortedEvents);
+          setEvents(data);
 
           // Fetch photos for each event
-          const photoPromises = sortedEvents.map(async (event: Event) => {
+          const photoPromises = data.map(async (event: Event) => {
             try {
               const photoResponse = await fetch(`/api/events/${event.id}/photos`);
               if (photoResponse.ok) {
@@ -58,7 +55,7 @@ export function RecentEvents() {
 
           const photoResults = await Promise.all(photoPromises);
           const photoMap: Record<string, EventPhoto[]> = {};
-          photoResults.forEach(result => {
+          photoResults.forEach((result: { eventId: string; photos: EventPhoto[] }) => {
             photoMap[result.eventId] = result.photos;
           });
           setPhotos(photoMap);
@@ -165,7 +162,13 @@ export function RecentEvents() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid gap-6 ${
+        getCurrentEvents().length === 1 
+          ? 'grid-cols-1 place-items-center' 
+          : getCurrentEvents().length === 2
+          ? 'grid-cols-1 md:grid-cols-2' 
+          : 'grid-cols-1 md:grid-cols-3'
+      }`}>
         {getCurrentEvents().map((event) => {
           const eventPhotos = photos[event.id] || [];
           const coverPhoto = eventPhotos.length > 0 ? eventPhotos[0] : null;
@@ -174,7 +177,9 @@ export function RecentEvents() {
             <Link
               key={event.id}
               href={`/events/${event.id}`}
-              className="card-hover glass-effect rounded-2xl overflow-hidden group"
+              className={`card-hover glass-effect rounded-2xl overflow-hidden group ${
+                getCurrentEvents().length === 1 ? 'max-w-md w-full' : ''
+              }`}
             >
               {/* Cover Image */}
               <div className="relative h-48 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
