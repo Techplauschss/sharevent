@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { sendVerificationCode } from "@/auth"
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,9 +12,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await sendVerificationCode(phone)
-    
-    return NextResponse.json(result)
+  // sendVerificationCode existiert nicht, daher Fehlerantwort
+  return NextResponse.json({ success: false, message: "Verifizierungscode-Funktion nicht implementiert." }, { status: 501 })
   } catch (error) {
     console.error("API Fehler:", error)
     return NextResponse.json(

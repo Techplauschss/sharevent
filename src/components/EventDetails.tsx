@@ -9,8 +9,8 @@ function AddMemberForm({ eventId }: { eventId: string }) {
         const props = ['tel', 'name'];
         // Nur eine Auswahl zulassen
         const opts = { multiple: false };
-        // @ts-ignore: Web Contacts API ist experimentell
-        const contacts = await (navigator as any).contacts.select(props, opts);
+  // Web Contacts API ist experimentell, daher cast auf 'any'
+  const contacts: any = await (navigator as any).contacts.select(props, opts);
         if (contacts && contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
           setPhone(contacts[0].tel[0]);
         }

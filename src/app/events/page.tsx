@@ -13,7 +13,7 @@ export default async function Events() {
   
   if (session?.user?.id) {
     // Find user by session ID (should exist since we use phone authentication)
-    let user = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
 
