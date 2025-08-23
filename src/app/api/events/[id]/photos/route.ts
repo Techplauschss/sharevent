@@ -23,23 +23,10 @@ export async function POST(
     let actualUserId = session.user.id;
     
     try {
-      // First try to find user by session ID
-      let user = await prisma.user.findUnique({
+      // Find user by session ID only
+      const user = await prisma.user.findUnique({
         where: { id: session.user.id }
       });
-
-      if (!user && session.user.email) {
-        // If not found by ID, try to find by email
-        user = await prisma.user.findUnique({
-          where: { email: session.user.email }
-        });
-        
-        if (user) {
-          actualUserId = user.id;
-          console.log('Using user ID from email lookup for photo upload:', actualUserId);
-        }
-      }
-
       if (user) {
         actualUserId = user.id;
       }

@@ -35,27 +35,12 @@ export default async function EventPage({ params }: EventPageProps) {
     );
   }
 
-  // Get the actual user ID from database (same logic as in API routes)
+  // Get the actual user ID from database (nur über ID)
   let actualUserId = session.user.id;
-  
   try {
-    // First try to find user by session ID
-    let user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
-
-    if (!user && session.user.email) {
-      // If not found by ID, try to find by email
-      user = await prisma.user.findUnique({
-        where: { email: session.user.email }
-      });
-      
-      if (user) {
-        actualUserId = user.id;
-        console.log('Using user ID from email lookup for Event detail page:', actualUserId);
-      }
-    }
-
     if (user) {
       actualUserId = user.id;
     }

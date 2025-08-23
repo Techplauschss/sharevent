@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
     }
 
+
     const { username } = await request.json()
 
     if (!username || typeof username !== "string") {
@@ -25,9 +26,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if username already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { username }
+    // Check if name already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { name: username }
     })
 
     const available = !existingUser

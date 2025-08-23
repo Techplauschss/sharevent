@@ -49,38 +49,16 @@ export async function DELETE(
     // Check if user is the creator or a member of the event
     const isCreator = event.creatorId === session.user.id;
     const isMember = event.members.some(member => member.userId === session.user.id);
-    
-    // Also check if user exists by email (fallback for ID mismatches)
-    const isMemberByEmail = session.user.email ? 
-      event.members.some(member => member.user.email === session.user.email) : false;
-    const isCreatorByEmail = session.user.email ? 
-      event.creator.email === session.user.email : false;
-    
-    console.log('Delete permission check:', {
-      sessionUserId: session.user.id,
-      sessionUserEmail: session.user.email,
-      eventCreatorId: event.creatorId,
-      eventCreatorEmail: event.creator.email,
-      isCreator,
-      isMember,
-      isCreatorByEmail,
-      isMemberByEmail,
-      memberIds: event.members.map(m => ({ id: m.userId, email: m.user.email }))
-    });
-    
-    // Allow deletion if user is creator OR member (by ID or email)
-    if (!isCreator && !isMember && !isCreatorByEmail && !isMemberByEmail) {
+
+    // Allow deletion if user is creator OR member (by ID)
+    if (!isCreator && !isMember) {
       return NextResponse.json({ 
         error: 'Only event members can delete this event',
         debug: {
           isCreator,
           isMember,
-          isCreatorByEmail,
-          isMemberByEmail,
           sessionUserId: session.user.id,
-          sessionUserEmail: session.user.email,
-          eventCreatorId: event.creatorId,
-          eventCreatorEmail: event.creator.email
+          eventCreatorId: event.creatorId
         }
       }, { status: 403 });
     }

@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if username already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { username }
+    // Check if name already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { name: username }
     })
 
     if (existingUser) {
@@ -40,12 +40,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Update user with username and mark onboarding as completed
+    // Update user with name
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        username,
-        onboardingCompleted: true
+        name: username
       }
     })
 
@@ -54,8 +53,7 @@ export async function POST(request: NextRequest) {
       message: "Benutzername erfolgreich gespeichert",
       user: {
         id: updatedUser.id,
-        username: updatedUser.username,
-        onboardingCompleted: updatedUser.onboardingCompleted
+        name: updatedUser.name
       }
     })
     

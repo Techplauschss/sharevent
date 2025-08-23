@@ -1,15 +1,19 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const eventId = params.id;
+    // Event-ID aus der URL extrahieren
+    const urlParts = request.nextUrl.pathname.split('/');
+    const eventId = urlParts[urlParts.indexOf('events') + 2];
+
     const body = await request.json();
     const { phone } = body;
 

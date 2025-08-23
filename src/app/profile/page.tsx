@@ -32,7 +32,7 @@ export default async function ProfilePage() {
                 {session.user?.name || "Unknown User"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {session.user?.email}
+                {session.user?.phone || "No phone number"}
               </p>
             </div>
           </div>

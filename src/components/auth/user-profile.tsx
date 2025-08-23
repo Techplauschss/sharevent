@@ -33,7 +33,7 @@ export default function UserProfile() {
         ) : (
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="text-sm font-medium text-white">
-              {session.user.name?.charAt(0) || session.user.email?.charAt(0) || 'U'}
+              {session.user.name?.charAt(0) || 'U'}
             </span>
           </div>
         )}
@@ -44,7 +44,7 @@ export default function UserProfile() {
           {session.user.name || 'User'}
         </span>
         <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-          {session.user.email}
+          {session.user.phone || 'No phone number'}
         </span>
       </div>
     </div>
