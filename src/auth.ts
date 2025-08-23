@@ -14,9 +14,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials: any) {
         const phone = credentials?.phone as string;
         if (!phone) return null;
-        const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '');
-        const phoneRegex = /^((\+\d{1,3})|0)[1-9]\d{5,13}$/;
-        if (!phoneRegex.test(normalizedPhone)) return null;
+  const normalizedPhone = phone.replace(/\D/g, ''); // Nur Ziffern
+  const phoneRegex = /^\d{6,15}$/; // 6-15 Ziffern
+  if (!phoneRegex.test(normalizedPhone)) return null;
         try {
           let user = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
           if (!user) {
