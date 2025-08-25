@@ -87,12 +87,7 @@ export default function Navigation() {
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link
-              href="/events"
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              Events
-            </Link>
+            {/* Navigation links can be added here if needed */}
           </div>
 
           {/* Desktop User Section */}
@@ -156,19 +151,45 @@ export default function Navigation() {
             )}
           </div>
 
-          {/* Mobile User Section - Only Profile Avatar */}
-          <div className="md:hidden flex items-center">
+          {/* Mobile User Section - Profile Avatar and Logout */}
+          <div className="md:hidden flex items-center space-x-2">
             {isLoggedIn ? (
-              <Link
-                href="/profile"
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              <>
+                {/* Profile Link */}
+                <Link
+                  href="/profile"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </Link>
+                
+                {/* Admin Link - Mobile (only icon) */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </Link>
+                )}
+
+                {/* Logout Button - Mobile (only icon) */}
+                <button
+                  onClick={handleLogout}
+                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200"
+                  title="Logout"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                </div>
-              </Link>
+                </button>
+              </>
             ) : (
               <Link
                 href="/auth/signin"
