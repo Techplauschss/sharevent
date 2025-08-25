@@ -346,7 +346,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
       {/* Main Event Card - Sleek Design */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
         {/* Header Section */}
-        <div className="p-8 pb-6">
+        <div className="px-8 pt-8 pb-1">
           <div className="flex flex-col mb-6">
             <div className="flex justify-between items-start mb-3">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight">
@@ -387,7 +387,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
               </span>
             </div>
             
-            <div className="flex gap-3 flex-wrap mt-2">
+            <div className="flex gap-3 flex-wrap mt-1">
               {!isMember && !isCreator && (
                 <button 
                   onClick={handleJoinEvent}
@@ -411,20 +411,10 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
         </div>
 
         {/* Photos Section */}
-        <div className="p-8 border-t border-gray-100 dark:border-gray-800">
+        <div className="px-8 pt-6 pb-8 border-t border-gray-100 dark:border-gray-800">
             {/* Photo Upload for members and creators */}
             {(isMember || isCreator) && (
-              <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    Upload New Photos
-                  </h3>
-                </div>
+              <div className="mb-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
                 <PhotoUpload 
                   eventId={event.id} 
                   onPhotoUploaded={handlePhotoUploaded}
