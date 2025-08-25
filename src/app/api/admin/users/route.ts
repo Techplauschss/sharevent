@@ -4,6 +4,29 @@ import { PrismaClient } from '@/generated/prisma';
 const prisma = new PrismaClient();
 const ADMIN_PHONE = '015153352436';
 
+// Phone number normalization function
+const normalizePhoneNumber = (phone: string): string => {
+  // Remove all spaces and non-digit characters except +
+  const cleaned = phone.replace(/[^\d+]/g, '');
+  
+  // Handle different formats
+  if (cleaned.startsWith('+4915')) {
+    return '015' + cleaned.substring(5); // +4915153352436 -> 015153352436
+  } else if (cleaned.startsWith('+491')) {
+    return '01' + cleaned.substring(4); // +491234567890 -> 011234567890
+  } else if (cleaned.startsWith('4915')) {
+    return '015' + cleaned.substring(4); // 4915153352436 -> 015153352436
+  } else if (cleaned.startsWith('491')) {
+    return '01' + cleaned.substring(3); // 491234567890 -> 011234567890
+  } else if (cleaned.startsWith('01')) {
+    return cleaned; // 01234567890 -> 01234567890
+  } else if (cleaned.match(/^\d{10,}$/)) {
+    return '0' + cleaned; // 1234567890 -> 01234567890
+  }
+  
+  return cleaned; // Return as-is if no pattern matches
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Get the phone number from query params for verification
@@ -126,7 +149,13 @@ export async function PUT(request: NextRequest) {
         // Prepare update data
         const updateData: any = {};
         if (name !== undefined) updateData.name = name.trim();
-        if (phone !== undefined) updateData.phone = phone;
+        if (phone !== undefined) {
+          const normalizedPhone = normalizePhoneNumber(phone);
+          if (!normalizedPhone.match(/^0\d{9,14}$/)) {
+            throw new Error('Ungültiges Telefonnummernformat');
+          }
+          updateData.phone = normalizedPhone;
+        }
 
         // Update user
         return await tx.user.update({
@@ -191,8 +220,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if phone already exists
+    const normalizedPhone = normalizePhoneNumber(phone);
     const existingUser = await prisma.user.findUnique({
-      where: { phone }
+      where: { phone: normalizedPhone }
     });
 
     if (existingUser) {
@@ -206,7 +236,7 @@ export async function POST(request: NextRequest) {
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
-        phone: phone,
+        phone: normalizedPhone,
         phoneVerified: null,
       },
       select: {

@@ -1,25 +1,119 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+
+// Phone number normalization function
+const normalizePhoneNumber = (phone: string): string => {
+  // Remove all spaces and non-digit characters except +
+  const cleaned = phone.replace(/[^\d+]/g, '');
+  
+  // Handle different formats
+  if (cleaned.startsWith('+4915')) {
+    return '015' + cleaned.substring(5); // +4915153352436 -> 015153352436
+  } else if (cleaned.startsWith('+491')) {
+    return '01' + cleaned.substring(4); // +491234567890 -> 011234567890
+  } else if (cleaned.startsWith('4915')) {
+    return '015' + cleaned.substring(4); // 4915153352436 -> 015153352436
+  } else if (cleaned.startsWith('491')) {
+    return '01' + cleaned.substring(3); // 491234567890 -> 011234567890
+  } else if (cleaned.startsWith('01')) {
+    return cleaned; // 01234567890 -> 01234567890
+  } else if (cleaned.match(/^\d{10,}$/)) {
+    return '0' + cleaned; // 1234567890 -> 01234567890
+  }
+  
+  return cleaned; // Return as-is if no pattern matches
+};
 
 export default function SignInPage() {
   const [phone, setPhone] = useState("")
+  const [name, setName] = useState("")
+  const [existingUser, setExistingUser] = useState<{ name: string } | null>(null)
+  const [checkingUser, setCheckingUser] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
+
+  // Prüfung ob Benutzer bereits existiert
+  const checkExistingUser = async (phoneNumber: string) => {
+    // Normalize phone number before checking
+    const normalizedPhone = normalizePhoneNumber(phoneNumber);
+    
+    if (normalizedPhone.length < 10) {
+      setExistingUser(null)
+      setName("")
+      return
+    }
+
+    setCheckingUser(true)
+    try {
+      const response = await fetch("/api/auth/check-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalizedPhone })
+      })
+      const result = await response.json()
+      
+      if (result.exists && result.user) {
+        setExistingUser(result.user)
+        setName(result.user.name || "")
+      } else {
+        setExistingUser(null)
+        setName("")
+      }
+    } catch (error) {
+      console.error('Error checking user:', error)
+      setExistingUser(null)
+      setName("")
+    } finally {
+      setCheckingUser(false)
+    }
+  }
+
+  // Debounced effect für Benutzerprüfung
+  useEffect(() => {
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (normalizedPhone.length >= 10) {
+      const timeoutId = setTimeout(() => {
+        checkExistingUser(phone)
+      }, 500)
+      
+      return () => clearTimeout(timeoutId)
+    } else {
+      setExistingUser(null)
+      setName("")
+    }
+  }, [phone])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage("")
 
-    console.log('🔑 Starting login process with phone:', phone)
+    // Normalize phone number before validation
+    const normalizedPhone = normalizePhoneNumber(phone);
+
+    // Validierung: Mindestens 10 Zeichen für normalisierte Telefonnummer
+    if (normalizedPhone.length < 10) {
+      setMessage("Telefonnummer muss mindestens 10 Zeichen lang sein")
+      setLoading(false)
+      return
+    }
+
+    // Validierung: Name muss mindestens 3 Zeichen haben
+    if (name.length < 3) {
+      setMessage("Name muss mindestens 3 Zeichen lang sein")
+      setLoading(false)
+      return
+    }
+
+    console.log('🔑 Starting login process with phone:', phone, 'normalized:', normalizedPhone, 'and name:', name)
 
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone })
+        body: JSON.stringify({ phone, name })
       })
       const result = await response.json()
       console.log('🔑 Login result:', result)
@@ -61,18 +155,52 @@ export default function SignInPage() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                minLength={10}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="+49 123 456 7890"
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                Format: +49 123 456 7890 oder 0123 456 7890
+                Format: +49 123 456 7890 oder 0123 456 7890 (mindestens 10 Zeichen)
               </p>
             </div>
+
+            {/* Namensfeld - erscheint nach Telefonnummer-Eingabe */}
+            {phone.length >= 10 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Name
+                  {existingUser && (
+                    <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
+                      (Bestehender Benutzer gefunden)
+                    </span>
+                  )}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    minLength={3}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="Ihr vollständiger Name"
+                    required
+                  />
+                  {checkingUser && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Mindestens 3 Zeichen. {existingUser ? 'Aktualisiert Ihren bestehenden Namen.' : 'Wird für Ihr neues Konto verwendet.'}
+                </p>
+              </div>
+            )}
             
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || phone.length < 10 || name.length < 3}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
