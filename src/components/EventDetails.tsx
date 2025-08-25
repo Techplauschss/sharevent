@@ -296,43 +296,54 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
         {/* Header Section */}
         <div className="p-8 pb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">
+          <div className="flex flex-col mb-6">
+            <div className="flex justify-between items-start mb-3">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                 {event.name}
               </h1>
-              <div className="flex items-center text-gray-600 dark:text-gray-400 mb-4">
-                <span className="text-sm">
-                  Created by {isCreator ? 'you' : getDisplayName(event.creator)}
-                </span>
+              
+              <div className="flex gap-3 ml-6 flex-shrink-0">
                 {(isMember || isCreator) && (
-                  <span className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">
-                    {isCreator ? 'Creator' : 'Member'}
-                  </span>
+                  <button 
+                    onClick={handleDeleteEvent}
+                    disabled={loading}
+                    className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 shadow-sm flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span className="md:inline hidden">{loading ? 'Deleting...' : 'Delete Event'}</span>
+                  </button>
                 )}
               </div>
-              
-              {/* Description integrated */}
-              {event.description && (
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6 max-w-3xl">
-                  {event.description}
-                </p>
-              )}
             </div>
             
-            <div className="flex gap-3 ml-6">
+            <div className="flex items-center flex-wrap gap-2 text-gray-600 dark:text-gray-400 mb-4 w-full">
               {(isMember || isCreator) && (
-                <button 
-                  onClick={handleDeleteEvent}
-                  disabled={loading}
-                  className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 shadow-sm flex items-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  <span>{loading ? 'Deleting...' : 'Delete Event'}</span>
-                </button>
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">
+                  {isCreator ? 'Creator' : 'Member'}
+                </span>
               )}
+              <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded-full">
+                {new Date(event.date).toLocaleDateString('de-DE', {
+                  day: '2-digit', 
+                  month: '2-digit',
+                  year: '2-digit'
+                })}
+              </span>
+              <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-medium rounded-full">
+                {event.members.length} {event.members.length === 1 ? 'Member' : 'Members'}
+              </span>
+            </div>
+            
+            {/* Description integrated */}
+            {event.description && (
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 max-w-3xl">
+                {event.description}
+              </p>
+            )}
+            
+            <div className="flex gap-3 flex-wrap mt-2">
               {!isMember && !isCreator && (
                 <button 
                   onClick={handleJoinEvent}
