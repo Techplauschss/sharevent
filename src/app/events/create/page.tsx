@@ -11,8 +11,7 @@ export default function CreateEvent() {
     description: '',
     date: '',
     time: '',
-    location: '',
-    memberEmails: ''
+    location: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,12 +29,6 @@ export default function CreateEvent() {
 
       // Combine date and time
       const dateTime = new Date(`${formData.date}T${formData.time}`);
-      
-      // Parse member emails
-      const memberEmails = formData.memberEmails
-        .split(',')
-        .map(email => email.trim())
-        .filter(email => email && email.includes('@'));
 
       const response = await fetch('/api/events', {
         method: 'POST',
@@ -47,8 +40,7 @@ export default function CreateEvent() {
           name: formData.name,
           description: formData.description,
           date: dateTime.toISOString(),
-          location: formData.location,
-          memberEmails: memberEmails.length > 0 ? memberEmails : undefined
+          location: formData.location
         }),
       });
 
@@ -188,25 +180,6 @@ export default function CreateEvent() {
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="Event location or 'Online'"
                   />
-                </div>
-
-                {/* Member Emails */}
-                <div>
-                  <label htmlFor="memberEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Invite Members
-                  </label>
-                  <input
-                    type="text"
-                    id="memberEmails"
-                    name="memberEmails"
-                    value={formData.memberEmails}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                    placeholder="Enter email addresses separated by commas"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Enter email addresses separated by commas to invite members to your event
-                  </p>
                 </div>
 
                 {/* Submit Buttons */}
