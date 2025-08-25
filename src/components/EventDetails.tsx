@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from 'react';
 import { getDisplayName } from '@/lib/user-utils';
+import { PhotoGallery } from './PhotoGallery';
+import { PhotoUpload } from './PhotoUpload';
+import { ConfirmModal } from './ConfirmModal';
 
 // Formular-Komponente zum Hinzufügen eines Members per Telefonnummer
 function AddMemberForm({ eventId }: { eventId: string }) {
@@ -67,42 +71,40 @@ function AddMemberForm({ eventId }: { eventId: string }) {
   };
 
   return (
-    <form onSubmit={handleAddMember} className="flex flex-col md:flex-row items-start gap-2 mt-2">
-      <div className="flex items-center gap-2 w-full">
-        <input
-          type="text"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          placeholder="Telefonnummer hinzufügen"
-          className="border rounded-lg px-3 py-2 text-sm"
-          required
-        />
-        <button
-          type="button"
-          onClick={handlePickContact}
-          className="bg-gray-200 dark:bg-gray-700 px-2 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-800 md:hidden"
-        >
-          Kontakt auswählen
-        </button>
-        <button
-          type="submit"
-          disabled={loading || !phone}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-        >
-          {loading ? 'Hinzufügen...' : 'Nummer hinzufügen'}
-        </button>
-      </div>
-      {error && <span className="text-red-600 text-sm ml-2">{error}</span>}
-      {success && <span className="text-green-600 text-sm ml-2">{success}</span>}
-    </form>
+    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+      <form onSubmit={handleAddMember} className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="Telefonnummer hinzufügen"
+            className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handlePickContact}
+              className="bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
+            >
+              📱 Kontakt
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !phone}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+            >
+              {loading ? 'Hinzufügen...' : 'Hinzufügen'}
+            </button>
+          </div>
+        </div>
+        {error && <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">{error}</div>}
+        {success && <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-2 rounded">{success}</div>}
+      </form>
+    </div>
   );
 }
-
-
-import { useState } from 'react';
-import { PhotoGallery } from './PhotoGallery';
-import { PhotoUpload } from './PhotoUpload';
-import { ConfirmModal } from './ConfirmModal';
 
 interface EventDetailsEvent {
   id: string
@@ -417,17 +419,17 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <div className="flex items-center gap-2">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Members
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {event.members.length} {event.members.length === 1 ? 'member' : 'members'}
-                </p>
-              </div>
-              {(isCreator || isMember) && (
-                <>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Members
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {event.members.length} {event.members.length === 1 ? 'member' : 'members'}
+                  </p>
+                </div>
+                {(isCreator || isMember) && (
                   <button
                     type="button"
                     className="ml-1 p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-200 dark:hover:bg-emerald-900"
@@ -438,12 +440,12 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
-                  {showAddMemberForm && (
-                    <div className="ml-2">
-                      <AddMemberForm eventId={event.id} />
-                    </div>
-                  )}
-                </>
+                )}
+              </div>
+              {(isCreator || isMember) && showAddMemberForm && (
+                <div className="w-full">
+                  <AddMemberForm eventId={event.id} />
+                </div>
               )}
             </div>
           </div>
