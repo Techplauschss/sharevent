@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-
-// Configure S3 client for Cloudflare R2
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
-
-const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
+import { deleteFromR2 } from '@/lib/r2';
 
 export async function GET(
   request: NextRequest,
@@ -63,6 +51,9 @@ export async function GET(
           select: {
             id: true,
             url: true,
+            r2Key: true,
+            thumbnail_url: true,
+            thumbnail_r2_key: true,
             createdAt: true,
             filename: true
           }
@@ -120,7 +111,7 @@ export async function DELETE(
     const resolvedParams = await params;
     const eventId = resolvedParams.id;
 
-    // Get the event and verify membership/ownership
+        // Get the event and verify membership/ownership
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       include: {
@@ -161,20 +152,27 @@ export async function DELETE(
       
       for (const photo of event.photos) {
         try {
-          // Extract the key from the photo URL
-          // URL format: https://bucket.accountid.r2.cloudflarestorage.com/events/eventId/filename
-          const urlParts = photo.url.split('/');
-          const key = urlParts.slice(-3).join('/'); // events/eventId/filename
-          
-          const deleteCommand = new DeleteObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: key,
-          });
+          // Delete the main photo using the stored r2Key
+          if (photo.r2Key) {
+            const deleted = await deleteFromR2(photo.r2Key);
+            if (deleted) {
+              console.log(`Deleted photo from R2: ${photo.r2Key}`);
+            } else {
+              console.error(`Failed to delete photo from R2: ${photo.r2Key}`);
+            }
+          }
 
-          await s3Client.send(deleteCommand);
-          console.log(`Deleted photo from R2: ${key}`);
+          // Delete thumbnail if it exists
+          if (photo.thumbnail_r2_key) {
+            const thumbnailDeleted = await deleteFromR2(photo.thumbnail_r2_key);
+            if (thumbnailDeleted) {
+              console.log(`Deleted thumbnail from R2: ${photo.thumbnail_r2_key}`);
+            } else {
+              console.error(`Failed to delete thumbnail from R2: ${photo.thumbnail_r2_key}`);
+            }
+          }
         } catch (error) {
-          console.error(`Failed to delete photo from R2: ${photo.url}`, error);
+          console.error(`Failed to delete photo from R2: ${photo.r2Key}`, error);
           // Continue with other photos even if one fails
         }
       }
