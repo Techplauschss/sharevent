@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import { getSavedUserName, USER_NAME_UPDATED_EVENT } from "@/lib/user-utils"
 
 export default function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [userPhone, setUserPhone] = useState("")
-  const [userName, setUserName] = useState("Nutzer")
+  const [userName, setUserName] = useState("User")
 
   useEffect(() => {
     const token = localStorage.getItem("authToken")
@@ -19,9 +20,9 @@ export default function Navigation() {
         const phone = atob(token)
         setUserPhone(phone)
         
-        // Load saved username from localStorage
-        const savedName = localStorage.getItem(`userName_${phone}`)
-        if (savedName) {
+        // Load saved username using utility function
+        const savedName = getSavedUserName(phone)
+        if (savedName && savedName !== phone) {
           setUserName(savedName)
         }
       } catch (error) {
@@ -30,11 +31,31 @@ export default function Navigation() {
     }
   }, [])
 
+  // Separate useEffect for listening to updates, depends on userPhone
+  useEffect(() => {
+    if (!userPhone) return
+
+    // Listen for username updates
+    const handleUserNameUpdate = (event: CustomEvent) => {
+      const { phone, name } = event.detail
+      if (phone === userPhone) {
+        setUserName(name)
+      }
+    }
+
+    window.addEventListener(USER_NAME_UPDATED_EVENT, handleUserNameUpdate as EventListener)
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener(USER_NAME_UPDATED_EVENT, handleUserNameUpdate as EventListener)
+    }
+  }, [userPhone])
+
   const handleLogout = () => {
     localStorage.removeItem("authToken")
     setIsLoggedIn(false)
     setUserPhone("")
-    setUserName("Nutzer")
+    setUserName("User")
     window.location.href = "/auth/signin"
   }
 

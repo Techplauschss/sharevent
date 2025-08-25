@@ -92,143 +92,159 @@ export default function CreateEvent() {
             </button>
           </div>
 
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Event Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Event Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter event name"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={3}
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                placeholder="Describe your event..."
-              />
-            </div>
-
-            {/* Date and Time */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                  Date *
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  required
-                  value={formData.date}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-2">
-                  Time *
-                </label>
-                <input
-                  type="time"
-                  id="time"
-                  name="time"
-                  required
-                  value={formData.time}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+          {/* Main Create Event Card */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            {/* Header Section */}
+            <div className="p-8 pb-6">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">
+                  Create Event
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Plan your next amazing event
+                </p>
               </div>
             </div>
 
-            {/* Location */}
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location
-              </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Event location or 'Online'"
-              />
-            </div>
+            {/* Form Section */}
+            <div className="px-8 pb-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Event Name */}
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Event Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    placeholder="Enter event name"
+                  />
+                </div>
 
-            {/* Member Emails */}
-            <div>
-              <label htmlFor="memberEmails" className="block text-sm font-medium text-gray-700 mb-2">
-                Invite Members
-              </label>
-              <input
-                type="text"
-                id="memberEmails"
-                name="memberEmails"
-                value={formData.memberEmails}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter email addresses separated by commas"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Enter email addresses separated by commas to invite members to your event
-              </p>
-            </div>
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={4}
+                    value={formData.description}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+                    placeholder="Describe your event..."
+                  />
+                </div>
 
-            {/* Submit Button */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
-                      <path fill="currentColor" className="opacity-75" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Create Event
-                  </>
-                )}
-              </button>
+                {/* Date and Time */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      id="date"
+                      name="date"
+                      required
+                      value={formData.date}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Time *
+                    </label>
+                    <input
+                      type="time"
+                      id="time"
+                      name="time"
+                      required
+                      value={formData.time}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    placeholder="Event location or 'Online'"
+                  />
+                </div>
+
+                {/* Member Emails */}
+                <div>
+                  <label htmlFor="memberEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Invite Members
+                  </label>
+                  <input
+                    type="text"
+                    id="memberEmails"
+                    name="memberEmails"
+                    value={formData.memberEmails}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    placeholder="Enter email addresses separated by commas"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Enter email addresses separated by commas to invite members to your event
+                  </p>
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex gap-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
+                          <path fill="currentColor" className="opacity-75" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create Event
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

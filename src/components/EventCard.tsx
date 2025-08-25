@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { QuickPhotoUpload } from './QuickPhotoUpload';
 import { useState, useEffect } from 'react';
 import { getProxiedImageUrl, isR2Url } from '@/lib/image-utils';
+import { getDisplayName } from '@/lib/user-utils';
 
 interface EventPhoto {
   id: string;
@@ -200,18 +201,18 @@ export function EventCard({ event, currentUserId, onPhotoUploaded }: EventCardPr
                   key={member.id} 
                   className="relative w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 overflow-hidden bg-gradient-to-r from-blue-400 to-purple-600"
                   style={{ zIndex: displayMembers.length - index }}
-                  title={member.user.name || member.user.phone || 'Member'}
+                  title={getDisplayName(member.user)}
                 >
                   {member.user.image ? (
                     <img 
                       src={member.user.image} 
-                      alt={member.user.name || 'Member'} 
+                      alt={getDisplayName(member.user)} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="text-white text-xs font-medium">
-                        {(member.user.name || member.user.phone || 'M')[0].toUpperCase()}
+                        {getDisplayName(member.user)[0].toUpperCase()}
                       </span>
                     </div>
                   )}

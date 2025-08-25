@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getDisplayName } from '@/lib/user-utils';
 
 interface EventPhoto {
   id: string;
@@ -233,7 +234,7 @@ export function RecentEvents() {
                       />
                     )}
                     <span className="text-gray-500 dark:text-gray-400 text-xs">
-                      {event.creator.name}
+                      {event.creator.name || 'Creator'}
                     </span>
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import { getDisplayName } from '@/lib/user-utils';
 import { getProxiedImageUrl, isR2Url } from '@/lib/image-utils';
 
 interface EventPhoto {
@@ -88,7 +89,7 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
     height: 800, // Default height
     // Additional metadata
     title: photo.caption || photo.originalName,
-    description: `Uploaded by ${photo.uploader.name || photo.uploader.phone} on ${formatDate(photo.createdAt)}`
+    description: `Uploaded by ${getDisplayName(photo.uploader)} on ${formatDate(photo.createdAt)}`
   }));
 
   if (loading) {

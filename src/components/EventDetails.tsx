@@ -1,4 +1,7 @@
 "use client";
+
+import { getDisplayName } from '@/lib/user-utils';
+
 // Formular-Komponente zum Hinzufügen eines Members per Telefonnummer
 function AddMemberForm({ eventId }: { eventId: string }) {
   // Kontakte auswählen (Web Contacts API)
@@ -300,7 +303,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
               </h1>
               <div className="flex items-center text-gray-600 dark:text-gray-400 mb-4">
                 <span className="text-sm">
-                  Created by {isCreator ? 'you' : event.creator.name || event.creator.phone}
+                  Created by {isCreator ? 'you' : getDisplayName(event.creator)}
                 </span>
                 {(isMember || isCreator) && (
                   <span className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">
@@ -526,13 +529,13 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
                     />
                   ) : (
                     <span className="text-white text-sm font-semibold">
-                      {(member.user.name || member.user.phone || 'M')[0].toUpperCase()}
+                      {getDisplayName(member.user)[0].toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {member.user.name || member.user.phone}
+                    {getDisplayName(member.user)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                     Member
