@@ -216,6 +216,8 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [eventMembers, setEventMembers] = useState(event.members);
+  const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{id: string, name: string} | null>(null);
 
   const handleJoinEvent = async () => {
     if (isMember) return;
@@ -311,6 +313,43 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
       }
     } catch (error) {
       console.error('Error refreshing members:', error);
+    }
+  };
+
+  const handleRemoveMember = (userId: string, userName: string) => {
+    if (!isCreator) return;
+    setMemberToRemove({ id: userId, name: userName });
+    setShowRemoveMemberModal(true);
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    
+    setShowRemoveMemberModal(false);
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/events/${event.id}/remove-member`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: memberToRemove.id }),
+      });
+
+      if (response.ok) {
+        // Refresh the member list from server to ensure it's up to date
+        await handleMemberAdded(); // This function already handles refreshing from server
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to remove member');
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+      alert('Failed to remove member');
+    } finally {
+      setMemberToRemove(null);
     }
   };
 
@@ -501,7 +540,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
         <div className="p-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {eventMembers.map((member, index) => (
-              <div key={`member-${index}`} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+              <div key={`member-${index}`} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 group">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   {member.user.image ? (
                     <img 
@@ -520,9 +559,21 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
                     {getDisplayName(member.user)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                    Member
+                    {member.user.id === event.creatorId ? 'Creator' : 'Member'}
                   </p>
                 </div>
+                {/* Delete button - only for creator and not for the creator himself */}
+                {isCreator && member.user.id !== event.creatorId && (
+                  <button
+                    onClick={() => handleRemoveMember(member.user.id, getDisplayName(member.user))}
+                    className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-all duration-200"
+                    title="Member entfernen"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -549,6 +600,21 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
         title="Event verlassen"
         message={`Möchtest du wirklich das Event "${event.name}" verlassen?\n\nDu wirst aus der Mitgliederliste entfernt und erhältst keine Updates mehr zu diesem Event.`}
         confirmText="Event verlassen"
+        cancelText="Abbrechen"
+        isDangerous={true}
+      />
+
+      {/* Remove Member Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showRemoveMemberModal}
+        onClose={() => {
+          setShowRemoveMemberModal(false);
+          setMemberToRemove(null);
+        }}
+        onConfirm={confirmRemoveMember}
+        title="Mitglied entfernen"
+        message={memberToRemove ? `Möchtest du wirklich "${memberToRemove.name}" aus dem Event "${event.name}" entfernen?\n\nDiese Person wird aus der Mitgliederliste entfernt und erhält keine Updates mehr zu diesem Event.` : ''}
+        confirmText="Mitglied entfernen"
         cancelText="Abbrechen"
         isDangerous={true}
       />
