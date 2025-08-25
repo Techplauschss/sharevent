@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { getSavedUserName, USER_NAME_UPDATED_EVENT } from "@/lib/user-utils"
 
 export default function Navigation() {
@@ -9,8 +10,14 @@ export default function Navigation() {
   const [userPhone, setUserPhone] = useState("")
   const [userName, setUserName] = useState("User")
   const [isAdmin, setIsAdmin] = useState(false)
+  const pathname = usePathname()
 
   const ADMIN_PHONE = "015153352436"
+
+  // Hide navigation on login/signin pages
+  if (pathname === "/auth/signin" || pathname === "/auth/login") {
+    return null
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("authToken")
