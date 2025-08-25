@@ -12,6 +12,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         phone: { label: "Telefonnummer", type: "tel" }
       },
       async authorize(credentials: any) {
+        console.log('[auth] Authorize gestartet. Environment:', {
+          NODE_ENV: process.env.NODE_ENV,
+          DATABASE_URL: process.env.DATABASE_URL,
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+        });
         const phone = credentials?.phone as string;
         if (!phone) {
           console.error('[auth] Kein Phone-Input erhalten:', credentials);
@@ -26,7 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           let user = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
           if (!user) {
-            console.error('[auth] Kein User mit dieser Nummer gefunden:', normalizedPhone);
+            console.warn('[auth] Kein User mit dieser Nummer gefunden:', normalizedPhone);
             user = await prisma.user.create({
               data: {
                 phone: normalizedPhone,
@@ -40,6 +45,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             console.error('[auth] User konnte nicht angelegt werden:', normalizedPhone);
             throw new Error('Benutzer konnte nicht angelegt werden.');
           }
+          console.log('[auth] Erfolgreiche Authorisierung:', {
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            image: user.image
+          });
           return {
             id: user.id,
             name: user.name,
