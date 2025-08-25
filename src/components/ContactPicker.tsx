@@ -41,7 +41,7 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
       // Optionen: mehrere Kontakte auswählbar
       const opts = { multiple: true };
 
-      // @ts-ignore - TypeScript kennt die API noch nicht vollständig
+      // @ts-expect-error - TypeScript kennt die API noch nicht vollständig
       const contacts = await navigator.contacts.select(props, opts);
       
       console.log('Ausgewählte Kontakte:', contacts);
@@ -68,7 +68,7 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
     if (!isSupported) return;
 
     try {
-      // @ts-ignore
+      // @ts-expect-error - TypeScript kennt die API noch nicht vollständig
       const availableProps = await navigator.contacts.getProperties();
       console.log('Verfügbare Eigenschaften:', availableProps);
     } catch (err) {

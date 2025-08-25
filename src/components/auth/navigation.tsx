@@ -14,11 +14,6 @@ export default function Navigation() {
 
   const ADMIN_PHONE = "015153352436"
 
-  // Hide navigation on login/signin pages
-  if (pathname === "/auth/signin" || pathname === "/auth/login") {
-    return null
-  }
-
   useEffect(() => {
     const token = localStorage.getItem("authToken")
     setIsLoggedIn(!!token)
@@ -60,6 +55,11 @@ export default function Navigation() {
       window.removeEventListener(USER_NAME_UPDATED_EVENT, handleUserNameUpdate as EventListener)
     }
   }, [userPhone])
+
+  // Hide navigation on login/signin pages
+  if (pathname === "/auth/signin" || pathname === "/auth/login") {
+    return null
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("authToken")

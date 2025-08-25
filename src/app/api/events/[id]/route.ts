@@ -67,7 +67,7 @@ export async function GET(
 
     // Check if user has access to this event
     const isCreator = event.creatorId === user.id
-    const isMember = event.members?.some((member: any) => member.userId === user.id)
+    const isMember = event.members?.some((member: { userId: string }) => member.userId === user.id)
 
     if (!isCreator && !isMember) {
       return NextResponse.json({ success: false, message: "Keine Berechtigung für dieses Event" }, { status: 403 })
