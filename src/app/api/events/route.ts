@@ -90,35 +90,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and date are required' }, { status: 400 });
     }
 
-    // Find or create invited users
-    const invitedUserIds: string[] = [];
-    if (invitedUsers && Array.isArray(invitedUsers)) {
-      for (const phone of invitedUsers) {
-        if (phone && phone.trim()) {
-          let invitedUser = await prisma.user.findUnique({ where: { phone: phone.trim() } });
-          if (!invitedUser) {
-            // Create user if not exists
-            invitedUser = await prisma.user.create({ 
-              data: { 
-                phone: phone.trim(),
-                name: null // Will be set when user signs up
-              } 
-            });
-          }
-          if (invitedUser.id !== user.id) { // Don't add creator as invited user
-            invitedUserIds.push(invitedUser.id);
-          }
-        }
-      }
-    }
-
-    // Create event with members
-    const memberData = [
-      { userId: user.id }, // Creator is always a member
-      ...invitedUserIds.map(userId => ({ userId })) // Add invited users
-    ];
-
-    // Create event
+    // Step 1: Create event with only creator as member
     const event = await prisma.event.create({
       data: {
         name,
@@ -127,7 +99,7 @@ export async function POST(request: NextRequest) {
         location,
         creatorId: user.id,
         members: {
-          create: memberData
+          create: [{ userId: user.id }] // Creator is always a member
         }
       },
       include: {
@@ -135,6 +107,58 @@ export async function POST(request: NextRequest) {
         members: { include: { user: { select: { id: true, name: true, phone: true, image: true } } } }
       }
     });
+
+    // Step 2: Add invited users to the created event
+    if (invitedUsers && Array.isArray(invitedUsers) && invitedUsers.length > 0) {
+      try {
+        const invitedUserIds: string[] = [];
+        
+        for (const phone of invitedUsers) {
+          if (phone && phone.trim()) {
+            let invitedUser = await prisma.user.findUnique({ where: { phone: phone.trim() } });
+            if (!invitedUser) {
+              // Create user if not exists
+              invitedUser = await prisma.user.create({ 
+                data: { 
+                  phone: phone.trim(),
+                  name: null // Will be set when user signs up
+                } 
+              });
+            }
+            if (invitedUser.id !== user.id) { // Don't add creator as invited user
+              invitedUserIds.push(invitedUser.id);
+            }
+          }
+        }
+
+        // Add invited users as members to the existing event
+        if (invitedUserIds.length > 0) {
+          await prisma.eventMember.createMany({
+            data: invitedUserIds.map(userId => ({
+              eventId: event.id,
+              userId: userId
+            })),
+            skipDuplicates: true // Prevent duplicate memberships
+          });
+
+          // Fetch updated event with all members
+          const updatedEvent = await prisma.event.findUnique({
+            where: { id: event.id },
+            include: {
+              creator: { select: { id: true, name: true, phone: true, image: true } },
+              members: { include: { user: { select: { id: true, name: true, phone: true, image: true } } } }
+            }
+          });
+
+          return NextResponse.json(updatedEvent, { status: 201 });
+        }
+      } catch (memberError) {
+        console.error('Error adding members to event:', memberError);
+        // Event was created successfully, but adding members failed
+        // Return the event anyway, members can be added later
+        console.log('Event created successfully, but some members could not be added');
+      }
+    }
 
     return NextResponse.json(event, { status: 201 });
   } catch (error) {

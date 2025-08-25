@@ -125,11 +125,24 @@ export default function CreateEvent() {
           description: formData.description,
           date: dateTime.toISOString(),
           location: formData.location,
-          invitedUsers: invitedUsers.map(u => u.phone) // Füge eingeladene Nutzer hinzu
+          invitedUsers: invitedUsers.map(u => u.phone) // Gepufferte Nutzer werden nach Event-Erstellung hinzugefügt
         }),
       });
 
       if (response.ok) {
+        const result = await response.json();
+        
+        // Check if there were any issues with adding members
+        if (invitedUsers.length > 0) {
+          const expectedMemberCount = invitedUsers.length + 1; // +1 for creator
+          const actualMemberCount = result.members?.length || 1;
+          
+          if (actualMemberCount < expectedMemberCount) {
+            // Some members couldn't be added, but event was created
+            alert('Event created successfully! Note: Some invited users could not be added and may need to be invited again.');
+          }
+        }
+        
         // Force a refresh of the events page when redirecting
         router.push('/events');
         router.refresh();
