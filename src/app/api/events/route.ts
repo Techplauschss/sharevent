@@ -54,3 +54,66 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get auth token from headers
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Decode phone number from token (base64)
+    let phone: string;
+    try {
+      phone = atob(token);
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Find user by phone
+    const user = await prisma.user.findUnique({
+      where: { phone }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 401 });
+    }
+
+    // Parse request body
+    const body = await request.json();
+    const { name, description, date, location } = body;
+
+    // Validate required fields
+    if (!name || !date) {
+      return NextResponse.json({ error: 'Name and date are required' }, { status: 400 });
+    }
+
+    // Create event
+    const event = await prisma.event.create({
+      data: {
+        name,
+        description,
+        date: new Date(date),
+        location,
+        creatorId: user.id,
+        members: {
+          create: {
+            userId: user.id
+          }
+        }
+      },
+      include: {
+        creator: { select: { id: true, name: true, phone: true, image: true } },
+        members: { include: { user: { select: { id: true, name: true, phone: true, image: true } } } }
+      }
+    });
+
+    return NextResponse.json(event, { status: 201 });
+  } catch (error) {
+    console.error('Error creating event:', error);
+    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
+  }
+}

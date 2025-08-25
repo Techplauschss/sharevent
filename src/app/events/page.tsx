@@ -1,25 +1,38 @@
-import { auth } from "@/auth";
+
+"use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { EventsList } from "@/components/EventsList";
-import { PrismaClient } from "@/generated/prisma";
 
-const prisma = new PrismaClient();
+export default function Events() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-export default async function Events() {
-  const session = await auth();
-
-  // Get the actual user ID from database
-  let actualUserId = session?.user?.id;
-  
-  if (session?.user?.id) {
-    // Find user by session ID (should exist since we use phone authentication)
-  const user = await prisma.user.findUnique({
-      where: { id: session.user.id }
-    });
-
-    if (user) {
-      actualUserId = user.id;
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      window.location.href = "/auth/signin";
+      return;
     }
+    fetch(`/api/events/by-phone?token=${token}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setEvents(data.events);
+        } else {
+          setError(data.message || "Fehler beim Laden der Events.");
+        }
+      })
+      .catch(() => setError("Fehler beim Laden der Events."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-center">Lade Events...</div>;
+  }
+  if (error) {
+    return <div className="p-8 text-center text-red-500">{error}</div>;
   }
 
   return (
@@ -58,7 +71,7 @@ export default async function Events() {
           </div>
 
           {/* Events List Component */}
-          <EventsList currentUserId={actualUserId} />
+          <EventsList events={events} />
         </div>
       </div>
     </div>

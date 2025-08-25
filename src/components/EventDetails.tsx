@@ -32,9 +32,20 @@ function AddMemberForm({ eventId }: { eventId: string }) {
     setError('');
     setSuccess('');
     try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/events/${eventId}/add-member`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ phone }),
       });
       const result = await response.json();
@@ -86,32 +97,57 @@ function AddMemberForm({ eventId }: { eventId: string }) {
 
 
 import { useState } from 'react';
-import { Event, User, EventMember } from '@/generated/prisma';
 import { PhotoGallery } from './PhotoGallery';
 import { PhotoUpload } from './PhotoUpload';
+import { ConfirmModal } from './ConfirmModal';
 
-interface EventWithRelations extends Event {
-  creator: Pick<User, 'id' | 'name' | 'phone' | 'image'>;
-  members: (EventMember & {
-    user: Pick<User, 'id' | 'name' | 'phone' | 'image'>;
-  })[];
+interface EventDetailsEvent {
+  id: string
+  name: string
+  description?: string
+  date: string
+  location?: string
+  createdAt: string
+  updatedAt: string
+  creatorId: string
+  creator: {
+    id: string
+    name?: string
+    phone: string
+    image?: string
+  }
+  members: Array<{
+    user: {
+      id: string
+      name?: string
+      phone: string
+      image?: string
+    }
+  }>
+  photos?: Array<{
+    id: string
+    url: string
+    createdAt: string
+    filename: string
+  }>
 }
 
 interface EventDetailsProps {
-  event: EventWithRelations;
-  currentUserId: string;
+  event: EventDetailsEvent;
   isCreator: boolean;
   isMember: boolean;
 }
 
-export function EventDetails({ event, currentUserId, isCreator, isMember }: EventDetailsProps) {
+export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) {
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPhotoGallery, setShowPhotoGallery] = useState(true);
   const [photoCount, setPhotoCount] = useState(0);
   const [photoRefreshTrigger, setPhotoRefreshTrigger] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString('de-DE', {
       weekday: 'long',
       day: '2-digit',
@@ -120,7 +156,7 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
     });
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: string | Date) => {
     return new Date(date).toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit'
@@ -132,10 +168,19 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
     
     setLoading(true);
     try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/events/${event.id}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
 
@@ -155,15 +200,26 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
 
   const handleLeaveEvent = async () => {
     if (!isMember || isCreator) return;
-    
-    if (!confirm('Are you sure you want to leave this event?')) return;
-    
+    setShowLeaveModal(true);
+  };
+
+  const confirmLeaveEvent = async () => {
+    setShowLeaveModal(false);
     setLoading(true);
     try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/events/${event.id}/leave`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
 
@@ -188,17 +244,26 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
 
   const handleDeleteEvent = async () => {
     if (!isMember && !isCreator) return;
-    
-    const confirmMessage = `Are you sure you want to delete "${event.name}"?\n\nThis will permanently delete:\n- The event\n- All event photos\n- All member associations\n\nThis action cannot be undone.`;
-    
-    if (!confirm(confirmMessage)) return;
-    
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    setShowDeleteModal(false);
     setLoading(true);
     try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/events/${event.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
 
@@ -450,8 +515,8 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
         
         <div className="p-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {event.members.map((member) => (
-              <div key={member.id} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+            {event.members.map((member, index) => (
+              <div key={`member-${index}`} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   {member.user.image ? (
                     <img 
@@ -467,10 +532,10 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {member.userId === currentUserId ? 'You' : member.user.name || member.user.phone}
+                    {member.user.name || member.user.phone}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                    {member.role === 'admin' ? 'Admin' : 'Member'}
+                    Member
                   </p>
                 </div>
               </div>
@@ -478,6 +543,30 @@ export function EventDetails({ event, currentUserId, isCreator, isMember }: Even
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteEvent}
+        title="Event löschen"
+        message={`Möchtest du wirklich das Event "${event.name}" löschen?\n\nDies löscht dauerhaft:\n- Das Event\n- Alle Event-Fotos\n- Alle Mitglieder-Zuordnungen\n\nDiese Aktion kann nicht rückgängig gemacht werden.`}
+        confirmText="Event löschen"
+        cancelText="Abbrechen"
+        isDangerous={true}
+      />
+
+      {/* Leave Event Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onConfirm={confirmLeaveEvent}
+        title="Event verlassen"
+        message={`Möchtest du wirklich das Event "${event.name}" verlassen?\n\nDu wirst aus der Mitgliederliste entfernt und erhältst keine Updates mehr zu diesem Event.`}
+        confirmText="Event verlassen"
+        cancelText="Abbrechen"
+        isDangerous={true}
+      />
     </div>
   );
 }

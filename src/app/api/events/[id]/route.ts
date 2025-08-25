@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 // Configure S3 client for Cloudflare R2
 const s3Client = new S3Client({
@@ -15,14 +14,107 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const url = new URL(request.url)
+    const token = url.searchParams.get("token")
+    
+    if (!token) {
+      return NextResponse.json({ success: false, message: "Token fehlt" }, { status: 401 })
+    }
+
+    const phone = Buffer.from(token, "base64").toString()
+    const user = await prisma.user.findUnique({ where: { phone } })
+    
+    if (!user) {
+      return NextResponse.json({ success: false, message: "Kein Nutzer gefunden" }, { status: 404 })
+    }
+
+    const resolvedParams = await params;
+    const eventId = resolvedParams.id;
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            image: true
+          }
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                image: true
+              }
+            }
+          }
+        },
+        photos: {
+          select: {
+            id: true,
+            url: true,
+            createdAt: true,
+            filename: true
+          }
+        }
+      }
+    })
+
+    if (!event) {
+      return NextResponse.json({ success: false, message: "Event nicht gefunden" }, { status: 404 })
+    }
+
+    // Check if user has access to this event
+    const isCreator = event.creatorId === user.id
+    const isMember = event.members?.some((member: any) => member.userId === user.id)
+
+    if (!isCreator && !isMember) {
+      return NextResponse.json({ success: false, message: "Keine Berechtigung für dieses Event" }, { status: 403 })
+    }
+
+    return NextResponse.json({ success: true, event, isCreator, isMember }, { status: 200 })
+  } catch (error) {
+    console.error("Fehler beim Laden des Events:", error)
+    return NextResponse.json({ success: false, message: "Serverfehler" }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Get authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authorization header required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const phone = Buffer.from(token, 'base64').toString();
+    
+    const user = await prisma.user.findUnique({ 
+      where: { phone } 
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
     }
 
     const resolvedParams = await params;
@@ -47,8 +139,8 @@ export async function DELETE(
     }
 
     // Check if user is the creator or a member of the event
-    const isCreator = event.creatorId === session.user.id;
-    const isMember = event.members.some(member => member.userId === session.user.id);
+    const isCreator = event.creatorId === user.id;
+    const isMember = event.members.some(member => member.userId === user.id);
 
     // Allow deletion if user is creator OR member (by ID)
     if (!isCreator && !isMember) {
@@ -57,7 +149,7 @@ export async function DELETE(
         debug: {
           isCreator,
           isMember,
-          sessionUserId: session.user.id,
+          userId: user.id,
           eventCreatorId: event.creatorId
         }
       }, { status: 403 });

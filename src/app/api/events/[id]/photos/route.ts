@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { PrismaClient } from '@/generated/prisma';
 import { uploadToR2, generatePhotoKey } from '@/lib/r2';
 
@@ -10,28 +9,28 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    // Get authorization header
+    const authHeader = request.headers.get('authorization');
     
-    if (!session?.user?.id) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Authorization header required' },
         { status: 401 }
       );
     }
 
-    // Get the actual user ID from database (same logic as in other routes)
-    let actualUserId = session.user.id;
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const phone = Buffer.from(token, 'base64').toString();
     
-    try {
-      // Find user by session ID only
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id }
-      });
-      if (user) {
-        actualUserId = user.id;
-      }
-    } catch (error) {
-      console.error('Error resolving user ID:', error);
+    const user = await prisma.user.findUnique({ 
+      where: { phone } 
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
     }
 
     const { id: eventId } = await params;
@@ -41,7 +40,7 @@ export async function POST(
       where: { id: eventId },
       include: {
         members: {
-          where: { userId: actualUserId }
+          where: { userId: user.id }
         }
       }
     });
@@ -54,7 +53,7 @@ export async function POST(
     }
 
     // Check if user is a member or creator of the event
-    const isMember = event.members.length > 0 || event.creatorId === actualUserId;
+    const isMember = event.members.length > 0 || event.creatorId === user.id;
     if (!isMember) {
       return NextResponse.json(
         { error: 'You must be a member of this event to upload photos' },
@@ -116,7 +115,7 @@ export async function POST(
     const eventPhoto = await prisma.eventPhoto.create({
       data: {
         eventId,
-        uploaderId: actualUserId,
+        uploaderId: user.id,
         filename: file.name,
         originalName: file.name,
         mimeType: file.type,

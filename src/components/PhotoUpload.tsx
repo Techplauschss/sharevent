@@ -56,8 +56,18 @@ export function PhotoUpload({ eventId, onPhotoUploaded }: PhotoUploadProps) {
         const formData = new FormData();
         formData.append('photo', file);
 
+        // Get auth token from localStorage
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setError('Authentication required');
+          break;
+        }
+
         const response = await fetch(`/api/events/${eventId}/photos`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: formData,
         });
 

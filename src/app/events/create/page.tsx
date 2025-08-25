@@ -20,6 +20,14 @@ export default function CreateEvent() {
     setLoading(true);
 
     try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/auth/signin');
+        return;
+      }
+
       // Combine date and time
       const dateTime = new Date(`${formData.date}T${formData.time}`);
       
@@ -33,6 +41,7 @@ export default function CreateEvent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           name: formData.name,

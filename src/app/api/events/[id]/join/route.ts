@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
@@ -9,11 +8,25 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    
-    if (!session?.user?.id) {
+    // Get authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Authorization header required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const phone = Buffer.from(token, 'base64').toString();
+    
+    const user = await prisma.user.findUnique({ 
+      where: { phone } 
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
         { status: 401 }
       );
     }
@@ -37,7 +50,7 @@ export async function POST(
     }
 
     // Check if user is already a member
-    const existingMember = event.members.find(member => member.userId === session.user.id);
+    const existingMember = event.members.find(member => member.userId === user.id);
     
     if (existingMember) {
       return NextResponse.json(
@@ -50,7 +63,7 @@ export async function POST(
     await prisma.eventMember.create({
       data: {
         eventId: eventId,
-        userId: session.user.id,
+        userId: user.id,
         role: 'member'
       }
     });
