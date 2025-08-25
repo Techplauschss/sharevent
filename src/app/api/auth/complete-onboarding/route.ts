@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/auth"
+import { requireAuth } from "@/lib/auth-helpers"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const authResult = await requireAuth(request);
     
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 })
+    if ('error' in authResult) {
+      return authResult.error;
     }
+    
+    const { user } = authResult;
 
     const { username } = await request.json()
 
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Update user with name
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data: {
         name: username
       }

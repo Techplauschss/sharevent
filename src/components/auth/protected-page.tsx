@@ -1,5 +1,7 @@
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { ReactNode } from "react"
 
 interface ProtectedPageProps {
@@ -7,19 +9,41 @@ interface ProtectedPageProps {
   fallback?: ReactNode
 }
 
-export default async function ProtectedPage({ 
+export default function ProtectedPage({ 
   children, 
   fallback 
 }: ProtectedPageProps) {
-  const session = await auth()
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const router = useRouter()
 
-  if (!session) {
+  useEffect(() => {
+    // Prüfe auf Auth-Token
+    const token = localStorage.getItem('auth_token')
+    
+    if (!token) {
+      setIsAuthenticated(false)
+      if (!fallback) {
+        router.push("/auth/signin")
+      }
+    } else {
+      setIsAuthenticated(true)
+    }
+  }, [router, fallback])
+
+  // Loading state
+  if (isAuthenticated === null) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
+  }
+
+  // Not authenticated
+  if (!isAuthenticated) {
     if (fallback) {
       return <>{fallback}</>
     }
-    redirect("/api/auth/signin")
+    return null // Router.push already called
   }
 
+  // Authenticated
   return <>{children}</>
 }
 
