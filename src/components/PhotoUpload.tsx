@@ -159,7 +159,10 @@ export function PhotoUpload({ eventId, onPhotoUploaded }: PhotoUploadProps) {
         <div className="flex flex-col items-center">
           {isUploading ? (
             <>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-2 sm:mb-4"></div>
+              <svg className="animate-spin h-8 w-8 sm:h-12 sm:w-12 text-blue-600 mb-2 sm:mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
               <p className="text-gray-600 dark:text-gray-300 mb-2 sm:mb-4 text-sm sm:text-base">
                 Uploading {uploadProgress.length} photo{uploadProgress.length !== 1 ? 's' : ''}...
               </p>
@@ -188,31 +191,24 @@ export function PhotoUpload({ eventId, onPhotoUploaded }: PhotoUploadProps) {
             </>
           ) : (
             <>
-              <svg 
-                className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mb-2 sm:mb-4" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 16l4-4m0 0l-4-4m4 4H4m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v12z" 
-                />
-              </svg>
-              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-1 sm:mb-2">
-                Add Event Photos
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-1 sm:mb-2 text-sm sm:text-base">
-                <span className="hidden sm:inline">Drag and drop multiple images here, or </span>
-                <span className="sm:hidden">Tap to select photos or </span>
-                <span>click to select</span>
-              </p>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                <span className="hidden sm:inline">Supports JPEG, PNG, WebP up to 10MB each</span>
-                <span className="sm:hidden">JPEG, PNG, WebP (max 10MB)</span>
-              </p>
+              <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+                <svg 
+                  className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" 
+                  />
+                </svg>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
+                  Add Event Photos
+                </h3>
+              </div>
             </>
           )}
         </div>

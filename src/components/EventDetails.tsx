@@ -13,11 +13,10 @@ interface UserSuggestion {
 }
 
 // Formular-Komponente zum Hinzufügen eines Members per Telefonnummer
-function AddMemberForm({ eventId }: { eventId: string }) {
+function AddMemberForm({ eventId, onMemberAdded }: { eventId: string; onMemberAdded: () => void }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -77,7 +76,6 @@ function AddMemberForm({ eventId }: { eventId: string }) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
     try {
       // Get auth token from localStorage
       const token = localStorage.getItem('authToken');
@@ -97,9 +95,8 @@ function AddMemberForm({ eventId }: { eventId: string }) {
       });
       const result = await response.json();
       if (response.ok) {
-        setSuccess('Nummer erfolgreich hinzugefügt!');
         setPhone('');
-        window.location.reload();
+        onMemberAdded(); // Call the callback instead of reloading
       } else {
         setError(result.error || 'Fehler beim Hinzufügen');
       }
@@ -127,7 +124,10 @@ function AddMemberForm({ eventId }: { eventId: string }) {
             />
             {searchLoading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               </div>
             )}
             
@@ -166,7 +166,6 @@ function AddMemberForm({ eventId }: { eventId: string }) {
           </button>
         </div>
         {error && <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">{error}</div>}
-        {success && <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-2 rounded">{success}</div>}
       </form>
     </div>
   );
@@ -216,6 +215,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
   const [photoRefreshTrigger, setPhotoRefreshTrigger] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [eventMembers, setEventMembers] = useState(event.members);
 
   const handleJoinEvent = async () => {
     if (isMember) return;
@@ -294,6 +294,24 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
   const handlePhotoUploaded = () => {
     // Trigger photo gallery refresh by incrementing a counter
     setPhotoRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleMemberAdded = async () => {
+    // Refresh the member list by fetching updated event data
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/events/${event.id}?token=${encodeURIComponent(token || '')}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.event) {
+          setEventMembers(data.event.members);
+        }
+      } else {
+        console.error('Failed to refresh members:', response.status);
+      }
+    } catch (error) {
+      console.error('Error refreshing members:', error);
+    }
   };
 
   const handleDeleteEvent = async () => {
@@ -383,7 +401,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
                 })}
               </span>
               <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-medium rounded-full">
-                {event.members.length} {event.members.length === 1 ? 'Member' : 'Members'}
+                {eventMembers.length} {eventMembers.length === 1 ? 'Member' : 'Members'}
               </span>
             </div>
             
@@ -446,25 +464,34 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
                     Members
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {event.members.length} {event.members.length === 1 ? 'member' : 'members'}
+                    {eventMembers.length} {eventMembers.length === 1 ? 'member' : 'members'}
                   </p>
                 </div>
                 {(isCreator || isMember) && (
-                  <button
-                    type="button"
-                    className="ml-1 p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-200 dark:hover:bg-emerald-900"
-                    onClick={() => setShowAddMemberForm(v => !v)}
-                    aria-label="Nummer hinzufügen"
-                  >
-                    <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="ml-1 p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-200 dark:hover:bg-emerald-900"
+                      onClick={() => setShowAddMemberForm(v => !v)}
+                      aria-label="Nummer hinzufügen"
+                    >
+                      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                    {/* Desktop: Show form inline */}
+                    {showAddMemberForm && (
+                      <div className="hidden md:block ml-4">
+                        <AddMemberForm eventId={event.id} onMemberAdded={handleMemberAdded} />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
+              {/* Mobile: Show form below */}
               {(isCreator || isMember) && showAddMemberForm && (
-                <div className="w-full">
-                  <AddMemberForm eventId={event.id} />
+                <div className="md:hidden w-full mt-2">
+                  <AddMemberForm eventId={event.id} onMemberAdded={handleMemberAdded} />
                 </div>
               )}
             </div>
@@ -473,7 +500,7 @@ export function EventDetails({ event, isCreator, isMember }: EventDetailsProps) 
         
         <div className="p-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {event.members.map((member, index) => (
+            {eventMembers.map((member, index) => (
               <div key={`member-${index}`} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                   {member.user.image ? (
