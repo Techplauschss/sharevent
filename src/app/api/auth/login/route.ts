@@ -54,7 +54,18 @@ export async function POST(request: NextRequest) {
     console.error("❌ Error details:", {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace',
-      name: error instanceof Error ? error.name : 'Unknown error type'
+      name: error instanceof Error ? error.name : 'Unknown error type',
+      code: (error as any)?.code,
+      errno: (error as any)?.errno,
+      syscall: (error as any)?.syscall
+    })
+    
+    // Log environment info for debugging
+    console.error("🌍 Environment debug info:", {
+      nodeEnv: process.env.NODE_ENV,
+      hasDbUrl: !!process.env.DATABASE_URL,
+      dbUrlStart: process.env.DATABASE_URL?.substring(0, 20),
+      platform: process.platform
     })
     
     // Return more detailed error information in development
@@ -66,7 +77,8 @@ export async function POST(request: NextRequest) {
       ...(isDevelopment && { 
         debug: {
           error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : 'No stack trace'
+          code: (error as any)?.code,
+          type: error instanceof Error ? error.name : 'Unknown error type'
         }
       })
     }, { status: 500 })
