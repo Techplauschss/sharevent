@@ -7,6 +7,7 @@ export default function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [userPhone, setUserPhone] = useState("")
+  const [userName, setUserName] = useState("Nutzer")
 
   useEffect(() => {
     const token = localStorage.getItem("authToken")
@@ -17,6 +18,12 @@ export default function Navigation() {
       try {
         const phone = atob(token)
         setUserPhone(phone)
+        
+        // Load saved username from localStorage
+        const savedName = localStorage.getItem(`userName_${phone}`)
+        if (savedName) {
+          setUserName(savedName)
+        }
       } catch (error) {
         console.error("Failed to decode token:", error)
       }
@@ -27,6 +34,7 @@ export default function Navigation() {
     localStorage.removeItem("authToken")
     setIsLoggedIn(false)
     setUserPhone("")
+    setUserName("Nutzer")
     window.location.href = "/auth/signin"
   }
 
@@ -60,8 +68,11 @@ export default function Navigation() {
           <div className="hidden md:flex items-center space-x-4">
             {isLoggedIn ? (
               <>
-                {/* Mini Profile */}
-                <div className="flex items-center space-x-3 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                {/* Mini Profile - Clickable Link to Profile Page */}
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-3 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
                   {/* Avatar Placeholder */}
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -72,13 +83,13 @@ export default function Navigation() {
                   {/* User Info */}
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      Nutzer
+                      {userName}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {userPhone}
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 {/* Logout Button */}
                 <button
