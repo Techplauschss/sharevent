@@ -1,37 +1,77 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getDisplayName } from '@/lib/user-utils';
 import { PhotoGallery } from './PhotoGallery';
 import { PhotoUpload } from './PhotoUpload';
 import { ConfirmModal } from './ConfirmModal';
 
+interface UserSuggestion {
+  id: string;
+  phone: string;
+  name: string | null;
+}
+
 // Formular-Komponente zum Hinzufügen eines Members per Telefonnummer
 function AddMemberForm({ eventId }: { eventId: string }) {
-  // Kontakte auswählen (Web Contacts API)
-  const handlePickContact = async () => {
-    if ('contacts' in navigator && 'ContactsManager' in window) {
-      try {
-        // Nur Felder, die wir brauchen
-        const props = ['tel', 'name'];
-        // Nur eine Auswahl zulassen
-        const opts = { multiple: false };
-  // Web Contacts API ist experimentell, daher cast auf 'any'
-  const contacts: any = await (navigator as any).contacts.select(props, opts);
-        if (contacts && contacts.length > 0 && contacts[0].tel && contacts[0].tel.length > 0) {
-          setPhone(contacts[0].tel[0]);
-        }
-      } catch (err) {
-        setError('Kontakt konnte nicht ausgewählt werden');
-      }
-    } else {
-      setError('Dein Browser unterstützt das Kontakte-Feature nicht');
-    }
-  };
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionRef = useRef<HTMLDivElement>(null);
+
+  // Debounce für die Suche
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (phone.length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        const response = await fetch(`/api/user/search?q=${encodeURIComponent(phone)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          setSuggestions(data.users || []);
+          setShowSuggestions(data.users.length > 0);
+        }
+      } catch (err) {
+        console.error('Error searching users:', err);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchUsers, 300);
+    return () => clearTimeout(timeoutId);
+  }, [phone]);
+
+  // Klick außerhalb schließt Dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        inputRef.current && !inputRef.current.contains(event.target as Node) &&
+        suggestionRef.current && !suggestionRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectSuggestion = (suggestion: UserSuggestion) => {
+    setPhone(suggestion.phone);
+    setShowSuggestions(false);
+  };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,30 +114,56 @@ function AddMemberForm({ eventId }: { eventId: string }) {
     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
       <form onSubmit={handleAddMember} className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            placeholder="Telefonnummer hinzufügen"
-            className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handlePickContact}
-              className="bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-            >
-              📱 Kontakt
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !phone}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
-            >
-              {loading ? 'Hinzufügen...' : 'Hinzufügen'}
-            </button>
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              onFocus={() => setShowSuggestions(suggestions.length > 0)}
+              placeholder="Telefonnummer oder Name eingeben"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            {searchLoading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              </div>
+            )}
+            
+            {/* Dropdown mit Vorschlägen */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div 
+                ref={suggestionRef}
+                className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+              >
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(suggestion)}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 border-b border-gray-200 dark:border-gray-600 last:border-b-0 transition-colors"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {suggestion.name || 'Unbekannt'}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {suggestion.phone}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+          <button
+            type="submit"
+            disabled={loading || !phone}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+          >
+            {loading ? 'Hinzufügen...' : 'Hinzufügen'}
+          </button>
         </div>
         {error && <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">{error}</div>}
         {success && <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-2 rounded">{success}</div>}
