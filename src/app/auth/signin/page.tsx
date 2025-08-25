@@ -16,24 +16,20 @@ export default function SignInPage() {
     console.log('🔑 Starting login process with phone:', phone)
 
     try {
-      const result = await signIn("phone-login", {
-        phone,
-        callbackUrl: "/events",
-        redirect: false
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone })
       })
-
-      console.log('🔑 SignIn result:', result)
-
-      if (result?.error) {
-        console.error('❌ SignIn error:', result.error)
-        setMessage("Fehler bei der Anmeldung. Bitte überprüfen Sie Ihre Telefonnummer.")
-      } else if (result?.ok) {
-        console.log('✅ SignIn successful, redirecting...')
+      const result = await response.json()
+      console.log('🔑 Login result:', result)
+      if (result.success && result.token) {
+        // Token speichern (z.B. im LocalStorage)
+        localStorage.setItem("authToken", result.token)
         // Erfolgreiche Anmeldung - zur Events-Seite weiterleiten
         window.location.href = "/events"
       } else {
-        console.log('⚠️ Unexpected result:', result)
-        setMessage("Unerwarteter Fehler bei der Anmeldung")
+        setMessage(result.message || "Fehler bei der Anmeldung.")
       }
     } catch (error) {
       console.error('❌ Login error:', error)
