@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Lightbox from 'yet-another-react-lightbox';
+import Download from 'yet-another-react-lightbox/plugins/download';
 import 'yet-another-react-lightbox/styles.css';
 import { getDisplayName } from '@/lib/user-utils';
 import { getProxiedImageUrl, isR2Url } from '@/lib/image-utils';
@@ -38,6 +39,7 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [downloadingPhoto, setDownloadingPhoto] = useState<string | null>(null);
 
   const fetchPhotos = async () => {
     try {
@@ -81,6 +83,67 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Download function for images
+  const downloadImage = async (url: string, filename: string, photoId?: string) => {
+    if (photoId) {
+      setDownloadingPhoto(photoId);
+    }
+    
+    try {
+      // Use our download API to handle CORS and force download
+      const downloadUrl = `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error('Error downloading image via download API:', error);
+      
+      // Fallback: Try using image proxy API
+      try {
+        const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (proxyError) {
+        console.error('Error downloading image via proxy:', proxyError);
+        
+        // Final fallback: Open image in new tab for manual download
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } finally {
+      if (photoId) {
+        setDownloadingPhoto(null);
+      }
+    }
+  };
+
   // Convert photos to lightbox format
   const lightboxSlides = photos.map((photo) => ({
     src: photo.url, // Use direct R2 URL
@@ -89,7 +152,12 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
     height: 800, // Default height
     // Additional metadata
     title: photo.caption || photo.originalName,
-    description: `Uploaded by ${getDisplayName(photo.uploader)} on ${formatDate(photo.createdAt)}`
+    description: `Uploaded by ${getDisplayName(photo.uploader)} on ${formatDate(photo.createdAt)}`,
+    // Download configuration
+    download: {
+      url: photo.url,
+      filename: photo.originalName || `photo-${photo.id}.jpg`
+    }
   }));
 
   if (loading) {
@@ -134,34 +202,60 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
             <div
               key={photo.id}
               className="aspect-square relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 group cursor-pointer hover:scale-105 transition-transform duration-200"
-              onClick={() => {
-                setLightboxIndex(index);
-                setLightboxOpen(true);
-              }}
             >
-              <img
-                src={photo.url}
-                alt={photo.caption || photo.originalName}
-                className="w-full h-full object-cover"
-                onLoad={() => {
-                  console.log('Gallery image loaded successfully:', photo.url);
+              <div
+                className="w-full h-full"
+                onClick={() => {
+                  setLightboxIndex(index);
+                  setLightboxOpen(true);
                 }}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  // Show fallback with photo icon
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.innerHTML = `
-                      <div class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-600">
-                        <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                    `;
-                  }
+              >
+                <img
+                  src={photo.url}
+                  alt={photo.caption || photo.originalName}
+                  className="w-full h-full object-cover"
+                  onLoad={() => {
+                    console.log('Gallery image loaded successfully:', photo.url);
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    // Show fallback with photo icon
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-600">
+                          <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                          </svg>
+                        </div>
+                      `;
+                    }
+                  }}
+                />
+              </div>
+              
+              {/* Download Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadImage(photo.url, photo.originalName || `photo-${photo.id}.jpg`, photo.id);
                 }}
-              />
+                disabled={downloadingPhoto === photo.id}
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 disabled:opacity-50"
+                title="Download Image"
+              >
+                {downloadingPhoto === photo.id ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                )}
+              </button>
             </div>
           );
         })}
@@ -173,6 +267,7 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
         close={() => setLightboxOpen(false)}
         index={lightboxIndex}
         slides={lightboxSlides}
+        plugins={[Download]}
         carousel={{
           padding: 0,
           spacing: 0,
@@ -189,6 +284,13 @@ export function PhotoGallery({ eventId, refreshTrigger, onPhotoCountChange }: Ph
         }}
         styles={{
           container: { backgroundColor: "rgba(0, 0, 0, 0.9)" },
+        }}
+        download={{
+          download: async ({ slide }) => {
+            if (typeof slide.download === 'object' && slide.download?.url && slide.download?.filename) {
+              await downloadImage(slide.download.url, slide.download.filename);
+            }
+          }
         }}
       />
     </>
