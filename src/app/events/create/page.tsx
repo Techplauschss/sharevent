@@ -1,7 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface UserSuggestion {
+  id: string;
+  phone: string;
+  name: string | null;
+}
+
+interface InvitedUser {
+  phone: string;
+  name: string | null;
+}
 
 export default function CreateEvent() {
   const router = useRouter();
@@ -12,6 +23,80 @@ export default function CreateEvent() {
     date: '',
     location: ''
   });
+  const [invitedUsers, setInvitedUsers] = useState<InvitedUser[]>([]);
+  const [invitePhone, setInvitePhone] = useState('');
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionRef = useRef<HTMLDivElement>(null);
+
+  // Debounce für die Nutzer-Suche
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (invitePhone.length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        const response = await fetch(`/api/user/search?q=${encodeURIComponent(invitePhone)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          setSuggestions(data.users || []);
+          setShowSuggestions(data.users.length > 0);
+        }
+      } catch (err) {
+        console.error('Error searching users:', err);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchUsers, 300);
+    return () => clearTimeout(timeoutId);
+  }, [invitePhone]);
+
+  // Klick außerhalb schließt Dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        inputRef.current && !inputRef.current.contains(event.target as Node) &&
+        suggestionRef.current && !suggestionRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectSuggestion = (suggestion: UserSuggestion) => {
+    setInvitePhone(suggestion.phone);
+    setShowSuggestions(false);
+  };
+
+  const handleAddInvite = () => {
+    if (invitePhone.trim() && !invitedUsers.find(u => u.phone === invitePhone)) {
+      // Finde den Namen aus den Suggestions oder nutze die eingegebene Nummer
+      const suggestion = suggestions.find(s => s.phone === invitePhone);
+      setInvitedUsers(prev => [...prev, { 
+        phone: invitePhone,
+        name: suggestion?.name || null
+      }]);
+      setInvitePhone('');
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleRemoveInvite = (phone: string) => {
+    setInvitedUsers(prev => prev.filter(u => u.phone !== phone));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +124,8 @@ export default function CreateEvent() {
           name: formData.name,
           description: formData.description,
           date: dateTime.toISOString(),
-          location: formData.location
+          location: formData.location,
+          invitedUsers: invitedUsers.map(u => u.phone) // Füge eingeladene Nutzer hinzu
         }),
       });
 
@@ -163,6 +249,91 @@ export default function CreateEvent() {
                     className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base"
                     placeholder="Event location or 'Online'"
                   />
+                </div>
+
+                {/* Invite Users */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
+                    Nutzer einladen (optional)
+                  </label>
+                  
+                  {/* Add User Input */}
+                  <div className="relative mb-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={invitePhone}
+                          onChange={e => setInvitePhone(e.target.value)}
+                          onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInvite())}
+                          placeholder="Telefonnummer oder Name eingeben"
+                          className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm"
+                        />
+                        {searchLoading && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                          </div>
+                        )}
+                        
+                        {/* Dropdown mit Vorschlägen */}
+                        {showSuggestions && suggestions.length > 0 && (
+                          <div 
+                            ref={suggestionRef}
+                            className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+                          >
+                            {suggestions.map((suggestion) => (
+                              <button
+                                key={suggestion.id}
+                                type="button"
+                                onClick={() => handleSelectSuggestion(suggestion)}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 border-b border-gray-200 dark:border-gray-600 last:border-b-0 transition-colors"
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-gray-900 dark:text-white text-sm">
+                                    {suggestion.name || 'Unbekannt'}
+                                  </span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {suggestion.phone}
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddInvite}
+                        disabled={!invitePhone.trim()}
+                        className="px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Invited Users List */}
+                  {invitedUsers.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Eingeladene Nutzer:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {invitedUsers.map((user) => (
+                          <div key={user.phone} className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs">
+                            <span>{user.name || user.phone}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInvite(user.phone)}
+                              className="ml-1 text-blue-600 dark:text-blue-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit Buttons */}

@@ -83,12 +83,40 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { name, description, date, location } = body;
+    const { name, description, date, location, invitedUsers = [] } = body;
 
     // Validate required fields
     if (!name || !date) {
       return NextResponse.json({ error: 'Name and date are required' }, { status: 400 });
     }
+
+    // Find or create invited users
+    const invitedUserIds: string[] = [];
+    if (invitedUsers && Array.isArray(invitedUsers)) {
+      for (const phone of invitedUsers) {
+        if (phone && phone.trim()) {
+          let invitedUser = await prisma.user.findUnique({ where: { phone: phone.trim() } });
+          if (!invitedUser) {
+            // Create user if not exists
+            invitedUser = await prisma.user.create({ 
+              data: { 
+                phone: phone.trim(),
+                name: null // Will be set when user signs up
+              } 
+            });
+          }
+          if (invitedUser.id !== user.id) { // Don't add creator as invited user
+            invitedUserIds.push(invitedUser.id);
+          }
+        }
+      }
+    }
+
+    // Create event with members
+    const memberData = [
+      { userId: user.id }, // Creator is always a member
+      ...invitedUserIds.map(userId => ({ userId })) // Add invited users
+    ];
 
     // Create event
     const event = await prisma.event.create({
@@ -99,9 +127,7 @@ export async function POST(request: NextRequest) {
         location,
         creatorId: user.id,
         members: {
-          create: {
-            userId: user.id
-          }
+          create: memberData
         }
       },
       include: {
